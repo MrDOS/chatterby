@@ -19,12 +19,12 @@ public class Message implements Payload
     /**
      * The minimum length of a message payload.
      */
-    private static final int MIN_LENGTH = 4 + 4 + 8 + 4;
+    private static final int MIN_LENGTH = 4 + 8 + 4 + 4;
 
     private final String username;
-    private final String message;
     private final Date sendDate;
     private final String tag;
+    private final String message;
 
     /**
      * Construct the message.
@@ -34,12 +34,12 @@ public class Message implements Payload
      * @param sendDate the date at which the message was sent
      * @param tag an arbitrary topic tag; may be null
      */
-    public Message(String username, String message, Date sendDate, String tag)
+    public Message(String username, Date sendDate, String tag, String message)
     {
         this.username = username;
-        this.message = message;
         this.sendDate = sendDate;
         this.tag = tag;
+        this.message = message;
     }
 
     /**
@@ -49,22 +49,17 @@ public class Message implements Payload
      * @param message the message body
      * @param tag an arbitrary topic tag; may be null
      */
-    public Message(String username, String message, String tag)
+    public Message(String username, String tag, String message)
     {
         this.username = username;
-        this.message = message;
         this.sendDate = new Date(System.currentTimeMillis());
         this.tag = tag;
+        this.message = message;
     }
 
     public String getUsername()
     {
         return this.username;
-    }
-
-    public String getMessage()
-    {
-        return this.message;
     }
 
     public Date getSendDate()
@@ -77,6 +72,11 @@ public class Message implements Payload
         return this.tag;
     }
 
+    public String getMessage()
+    {
+        return this.message;
+    }
+
     /**
      * Parse a message into a byte payload.
      * 
@@ -85,8 +85,8 @@ public class Message implements Payload
     public byte[] payload()
     {
         byte[] usernameBytes = null;
-        byte[] messageBytes = null;
         byte[] tagBytes = null;
+        byte[] messageBytes = null;
 
         try
         {
@@ -105,15 +105,15 @@ public class Message implements Payload
 
         byte[] payload = new byte[
                 4 + usernameBytes.length /* length + size of username */
-                        + 4 + messageBytes.length /* length + size of message */
                         + 8 /* send date */
                         + 4 + tagBytes.length /* length + size of tag */
+                        + 4 + messageBytes.length /* length + size of message */
                 ];
         ByteBuffer.wrap(payload)
                 .putInt(usernameBytes.length).put(usernameBytes)
-                .putInt(messageBytes.length).put(messageBytes)
                 .putLong(this.sendDate.getTime())
-                .putInt(tagBytes.length).put(tagBytes);
+                .putInt(tagBytes.length).put(tagBytes)
+                .putInt(messageBytes.length).put(messageBytes);
 
         return payload;
     }
@@ -134,20 +134,20 @@ public class Message implements Payload
         byte[] usernameBytes = new byte[buffer.getInt()];
         buffer.get(usernameBytes, 0, usernameBytes.length);
 
-        byte[] messageBytes = new byte[buffer.getInt()];
-        buffer.get(messageBytes, 0, messageBytes.length);
-
         long sendTimestamp = buffer.getLong();
 
         byte[] tagBytes = new byte[buffer.getInt()];
         buffer.get(tagBytes, 0, tagBytes.length);
 
+        byte[] messageBytes = new byte[buffer.getInt()];
+        buffer.get(messageBytes, 0, messageBytes.length);
+
         try
         {
             return new Message(new String(usernameBytes, "UTF8"),
-                    new String(messageBytes, "UTF8"),
                     new Date(sendTimestamp),
-                    (tagBytes.length > 0) ? null : new String(tagBytes, "UTF8"));
+                    (tagBytes.length > 0) ? null : new String(tagBytes, "UTF8"),
+                    new String(messageBytes, "UTF8"));
         }
         catch (UnsupportedEncodingException e)
         {
