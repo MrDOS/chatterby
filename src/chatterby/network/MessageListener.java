@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.SocketTimeoutException;
 import java.util.logging.Logger;
 
 import chatterby.messages.Message;
-import chatterby.messages.MessageConsumer;
 
 /**
  * Listens for messages from other clients.
@@ -18,20 +18,29 @@ import chatterby.messages.MessageConsumer;
  */
 public class MessageListener extends Thread
 {
+    /**
+     * Reads will timeout after this many milliseconds. This does not mean that
+     * the connection will be aborted, just that the thread can remain alive for
+     * up to this long after being interrupted.
+     */
+    public static final int TIMEOUT = 1000;
+
     private static final Logger LOGGER = Logger.getLogger(MessageManager.class.getName());
 
     private static final int PAYLOAD_SIZE = 4096;
 
-    private final MessageConsumer consumer;
+    private final PayloadConsumer consumer;
     private final MulticastSocket socket;
     private final InetAddress group;
 
-    public MessageListener(MessageConsumer consumer) throws IOException
+    public MessageListener(PayloadConsumer consumer) throws IOException
     {
         this.consumer = consumer;
         this.socket = new MulticastSocket(MessageManager.CONNECT_PORT);
         this.group = InetAddress.getByName(MessageManager.MULTICAST_ADDRESS);
         this.socket.joinGroup(group);
+
+        this.socket.setSoTimeout(MessageListener.TIMEOUT);
     }
 
     @Override
@@ -49,6 +58,12 @@ public class MessageListener extends Thread
             try
             {
                 this.socket.receive(packet);
+            }
+            catch (SocketTimeoutException e)
+            {
+                /* This is a normal part of checking for thread interruptions
+                 * and should be ignored. */
+                continue;
             }
             catch (IOException e)
             {
