@@ -36,10 +36,10 @@ public class Message implements Payload
      */
     public Message(String username, Date sendDate, String tag, String message)
     {
-        this.username = username;
+        this.username = username.trim();
         this.sendDate = sendDate;
-        this.tag = tag;
-        this.message = message;
+        this.tag = tag.trim();
+        this.message = message.trim();
     }
 
     /**
@@ -51,10 +51,10 @@ public class Message implements Payload
      */
     public Message(String username, String tag, String message)
     {
-        this.username = username;
+        this.username = username.trim();
         this.sendDate = new Date(System.currentTimeMillis());
-        this.tag = tag;
-        this.message = message;
+        this.tag = tag.trim();
+        this.message = message.trim();
     }
 
     public String getUsername()
