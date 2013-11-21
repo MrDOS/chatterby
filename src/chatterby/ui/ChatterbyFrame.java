@@ -5,6 +5,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
 import java.util.logging.Logger;
 
 import javax.swing.JFrame;
@@ -12,6 +13,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 import chatterby.messages.Message;
 import chatterby.network.MessageManager;
@@ -35,7 +40,9 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
     private JTextPane messages;
     private JTextField messageInput;
 
-    private String messagesText;
+    private SimpleDateFormat sendDateFormat;
+    private SimpleAttributeSet sendDateAttributeSet;
+    private SimpleAttributeSet usernameAttributeSet;
 
     public ChatterbyFrame(MessageManager manager)
     {
@@ -44,6 +51,12 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
         this.setTitle("Chatterby");
         this.setMinimumSize(new Dimension(600, 400));
 
+        this.initLayout();
+        this.initMessageComponents();
+    }
+
+    private void initLayout()
+    {
         /* Layout management */
         JPanel content = new JPanel();
         content.setLayout(new GridBagLayout());
@@ -53,7 +66,6 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
 
         /* Incoming messages */
         messages = new JTextPane();
-        messages.setContentType("text/html");
         messages.setEditable(false);
 
         c.gridx = 0;
@@ -87,16 +99,22 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
         this.add(messageInput, c);
     }
 
+    private void initMessageComponents()
+    {
+        this.sendDateFormat = new SimpleDateFormat("h:mm:ss a");
+
+        this.sendDateAttributeSet = new SimpleAttributeSet();
+        StyleConstants.setFontSize(this.sendDateAttributeSet,
+                (int) (StyleConstants.getFontSize(this.sendDateAttributeSet) * .75));
+
+        this.usernameAttributeSet = new SimpleAttributeSet();
+        StyleConstants.setBold(this.usernameAttributeSet, true);
+    }
+
     @Override
     public void consume(Message message)
     {
-        if (this.messagesText == null)
-            this.messagesText = "";
-        else
-            this.messagesText += "<br>";
-        this.messagesText += "<b>" + message.getUsername() + "</b>: " + message.getMessage() + "\n";
-        messages.setText("<html><body>" + this.messagesText + "</body></html>");
-        messages.setCaretPosition(messages.getDocument().getLength());
+        this.appendMessage(message);
     }
 
     /**
@@ -122,6 +140,34 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
                 LOGGER.warning("Failed to send message.");
             }
         }
+    }
+
+    private void appendMessage(Message message)
+    {
+        StyledDocument doc = messages.getStyledDocument();
+
+        StyleConstants.setForeground(this.usernameAttributeSet, Colorizer.colorize(message.getUsername()));
+
+        try
+        {
+            doc.insertString(doc.getLength(),
+                    this.sendDateFormat.format(message.getSendDate()) + "\t",
+                    this.sendDateAttributeSet);
+            doc.insertString(doc.getLength(),
+                    message.getUsername() + ":",
+                    this.usernameAttributeSet);
+            doc.insertString(doc.getLength(),
+                    " " + message.getMessage() + "\n",
+                    null);
+        }
+        catch (BadLocationException e)
+        {
+            /* Because we're inserting at the end of the document as indicated
+             * by the document itself, we will (presumably) never try to insert
+             * at a bad location. */
+        }
+
+        messages.setCaretPosition(messages.getDocument().getLength());
     }
 
     private void refreshMessages()
