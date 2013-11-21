@@ -58,6 +58,7 @@ public class MessageListener extends Thread
             try
             {
                 this.socket.receive(packet);
+                LOGGER.info("Received message from " + packet.getAddress().getCanonicalHostName() + ".");
             }
             catch (SocketTimeoutException e)
             {
