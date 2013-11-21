@@ -26,7 +26,7 @@ public class Colorizer
     {
         int codePointSum = 0;
         for (int i = 0; i < s.length(); i++)
-            codePointSum += s.codePointAt(i);
+            codePointSum ^= s.codePointAt(i);
 
         return Colorizer.COLORS[codePointSum % Colorizer.COLORS.length];
     }
