@@ -38,7 +38,7 @@ public class Message implements Payload
     {
         this.username = username.trim();
         this.sendDate = sendDate;
-        this.tag = tag.trim();
+        this.tag = (tag == null) ? null : tag.trim();
         this.message = message.trim();
     }
 
@@ -53,7 +53,7 @@ public class Message implements Payload
     {
         this.username = username.trim();
         this.sendDate = new Date(System.currentTimeMillis());
-        this.tag = tag.trim();
+        this.tag = (tag == null) ? null : tag.trim();
         this.message = message.trim();
     }
 
