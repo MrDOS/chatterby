@@ -7,8 +7,6 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
@@ -47,8 +45,6 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
     private final ReentrantLock messagesLock = new ReentrantLock();
 
     private DefaultListModel<String> usernames = new DefaultListModel<>();
-    private HashSet<String> tags = new HashSet<>();
-    private LinkedList<Message> messages = new LinkedList<>();
 
     private JTextPane messagePane;
     private JTextField messageField;
@@ -189,8 +185,6 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
 
         if (!this.usernames.contains(message.getUsername()))
             this.usernames.addElement(message.getUsername());
-        this.tags.add(message.getTag());
-        this.messages.add(message);
 
         this.appendMessage(message);
 
@@ -204,28 +198,20 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
      */
     private void sendMessage()
     {
-        String message = messageField.getText().trim();
+        String message = messageField.getText();
 
         if (message.length() == 0)
             return;
 
         messageField.setText("");
 
-        if (message.equals("/quit") || message.startsWith("/quit "))
+        try
         {
-            this.setVisible(false);
-            this.dispose();
+            this.manager.send(new Message(usernameField.getText(), null, message));
         }
-        else
+        catch (InterruptedException e)
         {
-            try
-            {
-                this.manager.send(new Message(usernameField.getText(), null, message));
-            }
-            catch (InterruptedException e)
-            {
-                LOGGER.warning("Failed to send message.");
-            }
+            LOGGER.warning("Failed to send message.");
         }
     }
 
@@ -234,7 +220,7 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
         StyledDocument doc = messagePane.getStyledDocument();
 
         StyleConstants.setForeground(this.usernameAttributeSet,
-                Colorizer.colorize(message.getUsername().trim()));
+                Colorizer.colorize(message.getUsername()));
 
         try
         {
@@ -256,11 +242,5 @@ public class ChatterbyFrame extends JFrame implements PayloadConsumer
         }
 
         messagePane.setCaretPosition(messagePane.getDocument().getLength());
-    }
-
-    private void refreshMessages()
-    {
-        this.messagesLock.lock();
-        this.messagesLock.unlock();
     }
 }
