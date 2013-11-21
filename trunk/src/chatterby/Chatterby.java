@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import javax.swing.JFrame;
+import javax.swing.UIManager;
 
 import chatterby.network.MessageListener;
 import chatterby.network.MessageManager;
@@ -39,6 +40,15 @@ public class Chatterby
 
     public static void main(String[] args) throws Exception
     {
+        try
+        {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        }
+        catch (Exception e)
+        {
+            LOGGER.warning("Couldn't set system look and feel. Things may look a little off.");
+        }
+
         try
         {
             new Chatterby();
